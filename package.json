@@ -1,0 +1,24 @@
+{
+  "name": "otter-monitor",
+  "version": "1.0.0",
+  "description": "Monitoring sond z alertami e-mail (brak danych / przekroczenie progów)",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.10.0",
+    "chart.js": "^4.4.9",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "express-session": "^1.18.1",
+    "helmet": "^8.1.0",
+    "nodemailer": "^6.10.1"
+  }
+}

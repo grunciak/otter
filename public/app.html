@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Otter Monitor</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦦</text></svg>">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="emoji">🦦</span> Otter Monitor</div>
+    <nav class="nav" id="nav">
+      <a href="#/pulpit" data-view="pulpit">Pulpit</a>
+      <a href="#/reguly" data-view="reguly">Reguły</a>
+      <a href="#/alerty" data-view="alerty">Alerty <span class="badge" id="alertBadge" hidden>0</span></a>
+      <a href="#/ustawienia" data-view="ustawienia">Ustawienia</a>
+    </nav>
+    <div class="userbox">
+      <span class="email" id="userEmail"></span>
+      <button id="logoutBtn">Wyloguj</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= PULPIT ================= -->
+    <section class="view" id="view-pulpit">
+      <h2>Pulpit</h2>
+      <p class="view-sub">Bieżący stan sond i ostatnie pomiary. <span id="pollInfo" class="muted"></span></p>
+      <div class="tiles" id="tiles"></div>
+      <div class="sensor-grid" id="sensorGrid"><div class="loading">Ładowanie…</div></div>
+    </section>
+
+    <!-- ================= REGUŁY ================= -->
+    <section class="view" id="view-reguly">
+      <h2>Reguły progowe</h2>
+      <p class="view-sub">Alert e-mail zostanie wysłany, gdy ostatnia wartość pomiaru wyjdzie poza ustalony zakres — i ponownie, gdy wróci do normy.</p>
+
+      <div class="section-card">
+        <h3 id="ruleFormTitle">Nowa reguła</h3>
+        <form id="ruleForm">
+          <div class="form-grid">
+            <div>
+              <label class="f" for="ruleSensor">Sonda</label>
+              <select class="f" id="ruleSensor" required></select>
+            </div>
+            <div>
+              <label class="f" for="ruleMetric">Pomiar</label>
+              <input class="f" id="ruleMetric" list="metricList" placeholder="np. temperatura" required>
+              <datalist id="metricList"></datalist>
+            </div>
+            <div>
+              <label class="f" for="ruleMin">Minimum</label>
+              <input class="f" id="ruleMin" type="number" step="any" placeholder="brak">
+            </div>
+            <div>
+              <label class="f" for="ruleMax">Maksimum</label>
+              <input class="f" id="ruleMax" type="number" step="any" placeholder="brak">
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn" type="submit" id="ruleSubmit">Dodaj regułę</button>
+              <button class="btn ghost" type="button" id="ruleCancel" hidden>Anuluj</button>
+            </div>
+          </div>
+          <p class="hint">Wystarczy jeden próg — samo minimum albo samo maksimum.</p>
+        </form>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sonda</th><th>Pomiar</th><th>Zakres</th><th>Stan</th><th>Status reguły</th><th></th></tr></thead>
+          <tbody id="rulesBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= ALERTY ================= -->
+    <section class="view" id="view-alerty">
+      <h2>Alerty</h2>
+      <p class="view-sub">Aktywne problemy oraz historia powiadomień e-mail.</p>
+      <div id="activeAlerts"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Czas</th><th>Sonda</th><th>Typ</th><th>Zdarzenie</th><th>Opis</th><th>E-mail</th></tr></thead>
+          <tbody id="alertsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= USTAWIENIA ================= -->
+    <section class="view" id="view-ustawienia">
+      <h2>Ustawienia</h2>
+      <p class="view-sub">Powiadomienia, konto i diagnostyka.</p>
+
+      <div class="section-card">
+        <h3>Powiadomienia e-mail</h3>
+        <div id="smtpWarning"></div>
+        <form id="settingsForm">
+          <div class="form-row">
+            <label class="f" for="alertEmails">Adresaci alertów (rozdziel przecinkami)</label>
+            <input class="f" id="alertEmails" placeholder="jan@example.com, anna@example.com">
+          </div>
+          <div class="form-row">
+            <label class="f" for="reminderMinutes">Przypominaj o trwającym alercie co (minuty, 0 = nie przypominaj)</label>
+            <input class="f" id="reminderMinutes" type="number" min="0" step="1">
+          </div>
+          <div class="form-row">
+            <label class="f" for="timezone">Strefa czasowa</label>
+            <input class="f" id="timezone" placeholder="Europe/Warsaw">
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn" type="submit">Zapisz ustawienia</button>
+            <button class="btn ghost" type="button" id="testEmailBtn">Wyślij testowy e-mail</button>
+            <button class="btn ghost" type="button" id="pollNowBtn">Sprawdź sondy teraz</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="section-card">
+        <h3>Zmiana hasła</h3>
+        <form id="passwordForm">
+          <div class="form-grid">
+            <div>
+              <label class="f" for="currentPassword">Aktualne hasło</label>
+              <input class="f" id="currentPassword" type="password" autocomplete="current-password" required>
+            </div>
+            <div>
+              <label class="f" for="newPassword">Nowe hasło (min. 8 znaków)</label>
+              <input class="f" id="newPassword" type="password" autocomplete="new-password" minlength="8" required>
+            </div>
+            <div><button class="btn" type="submit">Zmień hasło</button></div>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+  <script src="/vendor/chart.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
