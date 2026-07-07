@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS sensors (
   key TEXT NOT NULL UNIQUE,           -- np. sensor_1
   label TEXT NOT NULL,                -- nazwa wyświetlana
   url TEXT NOT NULL,
-  stale_minutes INTEGER NOT NULL DEFAULT 30,  -- po ilu minutach bez danych alarmować
+  stale_minutes INTEGER NOT NULL DEFAULT 240,  -- po ilu minutach bez danych alarmować
   enabled INTEGER NOT NULL DEFAULT 1
 );
 
