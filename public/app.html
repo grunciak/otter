@@ -117,6 +117,30 @@
       </div>
 
       <div class="section-card">
+        <h3>Użytkownicy panelu</h3>
+        <p class="hint" style="margin:-8px 0 14px">Każdy użytkownik loguje się własnym e-mailem i hasłem oraz ma pełny dostęp do panelu.</p>
+        <div class="table-wrap" style="margin-bottom:16px">
+          <table>
+            <thead><tr><th>E-mail</th><th>Utworzony</th><th></th></tr></thead>
+            <tbody id="usersBody"></tbody>
+          </table>
+        </div>
+        <form id="userForm">
+          <div class="form-grid">
+            <div>
+              <label class="f" for="newUserEmail">E-mail nowego użytkownika</label>
+              <input class="f" id="newUserEmail" type="email" autocomplete="off" required>
+            </div>
+            <div>
+              <label class="f" for="newUserPassword">Hasło (min. 8 znaków)</label>
+              <input class="f" id="newUserPassword" type="password" autocomplete="new-password" minlength="8" required>
+            </div>
+            <div><button class="btn" type="submit">Dodaj użytkownika</button></div>
+          </div>
+        </form>
+      </div>
+
+      <div class="section-card">
         <h3>Zmiana hasła</h3>
         <form id="passwordForm">
           <div class="form-grid">

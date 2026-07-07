@@ -30,10 +30,11 @@ app.use(helmet({
 app.use(express.json({ limit: '100kb' }));
 app.use(auth.sessionMiddleware());
 
-// Ochrona CSRF: mutacje tylko z JSON-owym Content-Type (formularz cross-site
-// nie może go ustawić), do tego cookie SameSite=Lax.
+// Ochrona CSRF: POST tylko z JSON-owym Content-Type (formularz cross-site może
+// wysłać POST bez preflight, ale nie ustawi application/json). PUT/DELETE/PATCH
+// wymuszają preflight CORS, a cookie ma SameSite=Lax.
 app.use('/api', (req, res, next) => {
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && !req.is('application/json')) {
+  if (req.method === 'POST' && !req.is('application/json')) {
     return res.status(415).json({ error: 'Wymagany Content-Type: application/json' });
   }
   next();
@@ -89,6 +90,42 @@ app.post('/api/change-password', (req, res) => {
   const user = auth.verifyLogin(req.session.email, currentPassword);
   if (!user) return res.status(401).json({ error: 'Aktualne hasło jest nieprawidłowe' });
   auth.changePassword(user.id, String(newPassword));
+  res.json({ ok: true });
+});
+
+// ---------- Użytkownicy panelu ----------
+
+app.get('/api/users', (req, res) => {
+  const users = db.prepare('SELECT id, email, created_at FROM users ORDER BY email').all();
+  res.json({ users, meId: req.session.userId });
+});
+
+app.post('/api/users', (req, res) => {
+  const { email, password } = req.body || {};
+  const em = String(email || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+    return res.status(400).json({ error: 'Nieprawidłowy adres e-mail' });
+  }
+  if (!password || String(password).length < 8) {
+    return res.status(400).json({ error: 'Hasło musi mieć min. 8 znaków' });
+  }
+  if (!auth.createUser(em, String(password))) {
+    return res.status(400).json({ error: 'Użytkownik o tym adresie już istnieje' });
+  }
+  res.json({ ok: true });
+});
+
+app.delete('/api/users/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (id === req.session.userId) {
+    return res.status(400).json({ error: 'Nie możesz usunąć konta, na które jesteś zalogowany' });
+  }
+  const count = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
+  if (count <= 1) return res.status(400).json({ error: 'Nie można usunąć ostatniego użytkownika' });
+  const r = db.prepare('DELETE FROM users WHERE id = ?').run(id);
+  if (r.changes === 0) return res.status(404).json({ error: 'Nie znaleziono użytkownika' });
+  // wylogowanie usuniętego użytkownika (sesje trzymają userId w JSON)
+  db.prepare("DELETE FROM sessions WHERE data LIKE ?").run(`%"userId":${id}%`);
   res.json({ ok: true });
 });
 

@@ -438,7 +438,30 @@ async function loadAlerts() {
 
 /* ================= Ustawienia ================= */
 
+async function loadUsers() {
+  const { users, meId } = await api('/api/users').catch(() => ({ users: [], meId: null }));
+  const body = $('#usersBody');
+  body.replaceChildren();
+  for (const u of users) {
+    body.append(el('tr', {},
+      el('td', {}, u.email, u.id === meId ? el('span', { class: 'muted' }, ' (ty)') : null),
+      el('td', { class: 'muted' }, fmtDate(u.created_at)),
+      el('td', { style: 'text-align:right' },
+        u.id === meId ? '' : el('button', {
+          class: 'btn danger sm',
+          onclick: async () => {
+            if (!confirm(`Usunąć użytkownika ${u.email}? Straci dostęp do panelu.`)) return;
+            try { await api(`/api/users/${u.id}`, { method: 'DELETE' }); toast('Usunięto użytkownika'); }
+            catch (err) { toast(err.message, true); }
+            loadUsers();
+          },
+        }, 'Usuń')),
+    ));
+  }
+}
+
 async function loadSettings() {
+  loadUsers();
   const s = await api('/api/settings').catch((e) => { toast(e.message, true); return null; });
   if (!s) return;
   $('#alertEmails').value = s.alertEmails;
@@ -520,6 +543,22 @@ async function init() {
       if (currentView() === 'pulpit') loadDashboard();
     } catch (err) { toast(err.message, true); }
     e.target.disabled = false;
+  });
+
+  $('#userForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/api/users', {
+        method: 'POST',
+        body: {
+          email: $('#newUserEmail').value,
+          password: $('#newUserPassword').value,
+        },
+      });
+      toast('Dodano użytkownika');
+      $('#userForm').reset();
+      loadUsers();
+    } catch (err) { toast(err.message, true); }
   });
 
   $('#passwordForm').addEventListener('submit', async (e) => {

@@ -89,6 +89,19 @@ function verifyLogin(email, password) {
   return ok && user ? { id: user.id, email: user.email } : null;
 }
 
+// Zwraca false, gdy adres jest już zajęty
+function createUser(email, password) {
+  const hash = bcrypt.hashSync(password, 12);
+  try {
+    db.prepare('INSERT INTO users (email, password_hash) VALUES (?, ?)')
+      .run(email.toLowerCase(), hash);
+    return true;
+  } catch (err) {
+    if (String(err.message).includes('UNIQUE')) return false;
+    throw err;
+  }
+}
+
 function changePassword(userId, newPassword) {
   const hash = bcrypt.hashSync(newPassword, 12);
   db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, userId);
@@ -102,4 +115,4 @@ function requireAuth(req, res, next) {
   return res.redirect('/login');
 }
 
-module.exports = { sessionMiddleware, seedAdmin, verifyLogin, changePassword, requireAuth };
+module.exports = { sessionMiddleware, seedAdmin, verifyLogin, createUser, changePassword, requireAuth };
